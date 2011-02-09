@@ -1,0 +1,6 @@
+This is the first draft of an add-on that might eventually be an identity
+manager.
+
+Right now, it's simply an interesting showcase of a pure-JS XPCOM component
+that's up-to-date with Firefox 4 best practices, and exposes a global object
+accessible from pages.
