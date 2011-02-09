@@ -1,0 +1,5 @@
+*~
+.*.sw*
+.sw*
+dist
+addon/components/IdentityManager.xpt

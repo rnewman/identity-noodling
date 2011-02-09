@@ -1,0 +1,1 @@
+/Users/rnewman/moz/git/identity/addon/components/identity.js
