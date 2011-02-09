@@ -40,60 +40,49 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const CLASS_NAME = "Mozilla Identity Manager";
-const CLASS_ID = Components.ID("{ec8030f7-c20a-464f-9b0e-13a3a9e97384}");
+const CLASS_NAME  = "Mozilla Identity Manager";
+const CLASS_ID    = Components.ID("{ec8030f7-c20a-464f-9b0e-13a3a9e97384}");
 const CONTRACT_ID = "@mozilla.org/services/identity;1";
 
+const SUPPORTED_INTERFACES = [Ci.nsIIdentityManager,
+                              //Ci.nsISecurityCheckedComponent,    // Not right now.
+                              Ci.nsIClassInfo];
+
 function IdentityManager() {
-  //this.wrappedJSObject = this;
 }
 IdentityManager.prototype = {
   _defaultProvider: "web4.dev.svc.mtv1.mozilla.com",
-  
+
   classDescription: CLASS_NAME,
   classID:          CLASS_ID,
+  classIDNoAlloc:   CLASS_ID,
   contractID:       CONTRACT_ID,
-  QueryInterface:   XPCOMUtils.generateQI([Ci.nsIIdentityManager,
-                                           Ci.nsISecurityCheckedComponent,
-                                           Ci.nsIClassInfo]),
-  
+  QueryInterface:   XPCOMUtils.generateQI(SUPPORTED_INTERFACES),
+
+  /* Bogus method for testing. */
+  foo: function foo() {
+    return "Hello!";
+  },
+
   /*
    * nsIClassInfo methods.
    */
   getInterfaces: function getInterfaces(aCount) {
-    let array = [Ci.nsIIdentityManager,
-                 Ci.nsISecurityCheckedComponent,
-                 Ci.nsIClassInfo];
+    let array = SUPPORTED_INTERFACES;
     aCount.value = array.length;
     return array;
   },
   implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
-  flags: Ci.nsIClassInfo.SINGLETON,
+  flags: Ci.nsIClassInfo.SINGLETON |
+         Ci.nsIClassInfo.DOM_OBJECT |
+         Ci.nsIClassInfo.THREADSAFE,
+
+  getHelperForLanguage: function getHelperForLanguage(lang) {
+    return null;
+  },
 
   xpcom_categories: [{category: "JavaScript global property", entry: "identity"}],
 
-  /*
-   * nsISecurityCheckedComponent methods.
-   */
-  
-  canCreateWrapper: function canCreateWrapper(iid) {
-    return (iid.equals(Ci.nsIIdentityManager) && "allAccess") || "noAccess";
-  },
-  
-  canCallMethod: function canCallMethod(iid, methodName) {
-    return (iid.equals(Ci.nsIIdentityManager) &&
-            (methodName == "createSignInButton") &&
-            "allAccess") || "noAccess";
-  },
-  
-  canGetProperty: function canGetProperty(iid, propertyName) {
-    return "noAccess";
-  },
- 
-  canSetProperty: function canSetProperty(iid, propertyName) {
-    return "noAccess";
-  }, 
-  
   /*
    * Takes as input an array of providers that the RP can handle.
    * Returns three values: an array of providers that the user already uses,
@@ -103,7 +92,7 @@ IdentityManager.prototype = {
       let acceptable = [];
       let create     = [];
       let unknown    = [];
-      
+
       if (!suggested.length)
         return [acceptable, create, unknown];
 
@@ -125,13 +114,13 @@ IdentityManager.prototype = {
         else
           unknown.push(p);
       });
-        
+
       return [acceptable, create, unknown];
     },
-  
+
   /*
    * Create a signin button, attached to an element in the document.
-   * 
+   *
    * Arguments:
    *   providers:  an array of identity provider URIs, or ["*"].
    *   attributes: an array of attributes being requested from the provider.
@@ -139,45 +128,76 @@ IdentityManager.prototype = {
    *   callback:   a function of (response), where response has these attributes:
    *     - sid:      the opaque string provided by the caller.
    *     - success:  boolean, true if the authentication operation succeeded.
-   *     
+   *
    *   On success:
    *     - provider: the URI of the selected provider.
    *     - id:       the opaque identifier for this user.
    *     - secret:   an optional additional element of entropy.
    *     - metadata: a key-value map of granted attributes.
-   *   
+   *
    *   On failure:
    *     - error:    a map of code/subcode/message from the upstream provider.
-   * 
+   *
    * This function returns whether a signin button was created.
-   * 
+   *
    * On callback, the response can be verified by making a request to the
    * provider URI with the id and secret.
    */
-  createSignInButton: 
+  createSignInButton:
     function createSignInButton(providers, attributes, domID, callback) {
-      if (!document)
+      // TODO: this is wrong.
+      if (!window.document)
         throw "Cannot operate in a non-document context.";
-      
+
       // Find out which providers are acceptable. Use these in the generated UI.
       let [acceptable, create, unknown] = this._partitionProviders(providers);
-      
+
       // Build a button.
-      let parent = document.getElementById(domID);
-      
+      let parent = window.document.getElementById(domID);
+
       if (!parent)
         return false;
-      
-      let button = document.createElement("input");
+
+      let button = window.document.createElement("input");
       button.name = "Sign In";
       button.type = "button";
       button.onclick = function() {
         alert(JSON.stringify([acceptable, create, unknown]));
       }
-      
+
       // TODO: iframe.
       parent.appendChild(button);
     }
+
+
+
+  /*
+   * nsISecurityCheckedComponent methods.
+   * These are commented out for now, because being a DOM_OBJECT makes them
+   * irrelevant, but at some point we might want to switch and use these for
+   * fine-grained access control.
+   */
+
+  /*
+  canCreateWrapper: function canCreateWrapper(iid) {
+    return (iid.equals(Ci.nsIIdentityManager) && "allAccess") || "noAccess";
+  },
+
+  canCallMethod: function canCallMethod(iid, methodName) {
+    return (iid.equals(Ci.nsIIdentityManager) &&
+            (methodName == "createSignInButton") &&
+            "allAccess") || "noAccess";
+  },
+
+  canGetProperty: function canGetProperty(iid, propertyName) {
+    return "noAccess";
+  },
+
+  canSetProperty: function canSetProperty(iid, propertyName) {
+    return "noAccess";
+  },
+   */
+
 };
 
 var IdentityManagerFactory = {
@@ -191,13 +211,13 @@ var IdentityManagerFactory = {
 // XPCOM registration.
 var IdentityManagerModule = {
   _firstTime: true,
-  
+
   registerSelf: function registerSelf(aCompMgr, aFileSpec, aLocation, aType) {
     if (this._firstTime) {
       this._firstTime = false;
       throw Components.results.NS_ERROR_FACTORY_REGISTER_AGAIN;
     }
-    
+
     aCompMgr = aCompMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
     aCompMgr.registerFactoryLocation(CLASS_ID, CLASS_NAME,
                                      CONTRACT_ID, aFileSpec, aLocation, aType);
@@ -205,9 +225,9 @@ var IdentityManagerModule = {
 
   unregisterSelf: function unregisterSelf(aCompMgr, aLocation, aType) {
     aCompMgr = aCompMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
-    aCompMgr.unregisterFactoryLocation(CLASS_ID, aLocation);        
+    aCompMgr.unregisterFactoryLocation(CLASS_ID, aLocation);
   },
-  
+
   getClassObject: function getClassObject(aCompMgr, aCID, aIID) {
     if (!aIID.equals(Components.interfaces.nsIFactory))
       throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
@@ -220,5 +240,5 @@ var IdentityManagerModule = {
 
   canUnload: function canUnload(aCompMgr) { return true; }
 };
-      
+
 const NSGetFactory = XPCOMUtils.generateNSGetFactory([IdentityManager]);

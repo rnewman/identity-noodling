@@ -62,7 +62,7 @@ endif
 all: xpi
 
 idl:
-	$(MOZ_OBJDIR)/dist/bin/xpidl -m typelib -w -v -I \
+	$(MOZ_OBJDIR)/dist/bin/xpidl -a -m typelib -w -v -I \
 		$(MOZ_OBJDIR)/dist/idl \
 		-e $(TOPSRCDIR)/addon/components/IdentityManager.xpt \
 		$(TOPSRCDIR)/addon/IdentityManager.idl
@@ -93,3 +93,4 @@ xpi: build
 
 clean:
 	rm -rf $(objdir)
+	rm $(TOPSRCDIR)/addon/components/IdentityManager.xpt
