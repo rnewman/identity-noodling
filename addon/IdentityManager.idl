@@ -35,19 +35,14 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "nsISupports.idl"
-#include "nsIArray.idl"
-
-[scriptable,function, uuid(4ab3e1df-2c04-43d2-9c71-2ccf9e531898)]
-interface nsIIdentityManagerLoginButtonCallback :nsISupports {
-  void doCallback();
-};
+#include "nsIVariant.idl"
 
 [scriptable, uuid(ec8030f7-c20a-464f-9b0e-13a3a9e97384)]
 interface nsIIdentityManager : nsISupports {
-  void createSignInButton(in nsISupports providers,
-                          in nsISupports attributes,
-                          in AString domID,
-                          in nsIIdentityManagerLoginButtonCallback callback);
+  void createSignInButton(in nsIVariant providers,
+                          in nsIVariant attributes,
+                          in nsIVariant domID,
+                          in nsiVariant callback);
 
   /* Bogus method for testing. */
   AString foo();

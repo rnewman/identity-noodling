@@ -147,6 +147,7 @@ IdentityManager.prototype = {
       dump("Providers: " + providers + "\n");
       dump("Providers: " + JSON.stringify(providers) + "\n");
       dump("DOM object is " + domObject + "\n");
+      dump("Callback is " + callback + "\n");
       if (!domObject)
         return false;
 
@@ -154,12 +155,15 @@ IdentityManager.prototype = {
       let [acceptable, create, unknown] = this._partitionProviders(providers);
 
       // Build a button.
-      let button = domObject.ownerDocument.createElement("input");
-      button.name = "Sign In";
-      button.type = "button";
-      button.onclick = function() {
-        button.name = JSON.stringify([acceptable, create, unknown]);
-      }
+      let button   = domObject.ownerDocument.createElement("input");
+      button.value = "Sign In";
+      button.type  = "button";
+      button.addEventListener("click",
+          function() {
+            this.value = "Indeed.";
+            callback();
+          },
+          true);
 
       // TODO: iframe.
       domObject.appendChild(button);
