@@ -61,13 +61,23 @@ IdentityManager.prototype = {
   // contents.
   //_defaultIFrameSrc: "data:text/html,<html><head></head><body>Hello!</body></html>",
 
+  /*
+   * When we sub in a login page, this is where we go.
+   */
+  _loginIFrameSrc: "https://id.mozilla.com/login/",
+
+  /*
+   * XPCOM nonsense.
+   */
   classDescription: CLASS_NAME,
   classID:          CLASS_ID,
   classIDNoAlloc:   CLASS_ID,
   contractID:       CONTRACT_ID,
   QueryInterface:   XPCOMUtils.generateQI(SUPPORTED_INTERFACES),
 
-  /* Bogus method for testing. */
+  /*
+   * Bogus method for testing.
+   */
   foo: function foo() {
     return "Hello!";
   },
@@ -163,30 +173,32 @@ IdentityManager.prototype = {
       let [acceptable, create, unknown] = this._partitionProviders(providers);
 
       let outerDoc = domObject.ownerDocument;
-      let iframe   = outerDoc.createElement("iframe");
-      iframe.src   = this._defaultIFrameSrc;
-      domObject.appendChild(iframe);
-      let innerDoc = iframe.contentDocument;
-      let body     = innerDoc.createElement("body");
-      let contain  = innerDoc.createElement("div");
+      let src      = this._loginIFrameSrc;
+      function insertIFrame() {
+        let iframe   = outerDoc.createElement("iframe");
+        iframe.src   = src;
+
+        // For now, just add the frame to the page. We probably want a pretty
+        // overlay instead.
+        domObject.appendChild(iframe);
+
+        // TODO: Wire up listeners for the iframe's events, and call the callback.
+      }
 
       // Build a button.
-      let button   = innerDoc.createElement("input");
+      let button   = outerDoc.createElement("input");
       button.value = "Sign In";
       button.type  = "button";
       button.addEventListener("click",
           function() {
+            insertIFrame();
             this.value = "Indeed.";
-            callback();
           },
           true);
 
       // Wire everything together.
-      contain.appendChild(button);
-      body.appendChild(contain);
-      innerDoc.body = body;
+      domObject.appendChild(button);
     }
-
 
 
   /*
