@@ -1,4 +1,4 @@
-content	identity	chrome/content/
+content	identity	chrome/content/ contentaccessible=yes
 interfaces components/IdentityManager.xpt
 component {ec8030f7-c20a-464f-9b0e-13a3a9e97384} components/identity.js
 contract @mozilla.org/services/identity;1 {ec8030f7-c20a-464f-9b0e-13a3a9e97384}

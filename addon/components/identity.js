@@ -53,6 +53,14 @@ function IdentityManager() {
 IdentityManager.prototype = {
   _defaultProvider: "web4.dev.svc.mtv1.mozilla.com",
 
+  // We get a security error when this is loaded... but then everything works fine.
+  // Puzzling.
+  _defaultIFrameSrc: "chrome://identity/content/buttonframe.html",
+
+  // An alternative approach... that doesn't actually allow us to fiddle with the
+  // contents.
+  //_defaultIFrameSrc: "data:text/html,<html><head></head><body>Hello!</body></html>",
+
   classDescription: CLASS_NAME,
   classID:          CLASS_ID,
   classIDNoAlloc:   CLASS_ID,
@@ -154,8 +162,16 @@ IdentityManager.prototype = {
       // Find out which providers are acceptable. Use these in the generated UI.
       let [acceptable, create, unknown] = this._partitionProviders(providers);
 
+      let outerDoc = domObject.ownerDocument;
+      let iframe   = outerDoc.createElement("iframe");
+      iframe.src   = this._defaultIFrameSrc;
+      domObject.appendChild(iframe);
+      let innerDoc = iframe.contentDocument;
+      let body     = innerDoc.createElement("body");
+      let contain  = innerDoc.createElement("div");
+
       // Build a button.
-      let button   = domObject.ownerDocument.createElement("input");
+      let button   = innerDoc.createElement("input");
       button.value = "Sign In";
       button.type  = "button";
       button.addEventListener("click",
@@ -165,8 +181,10 @@ IdentityManager.prototype = {
           },
           true);
 
-      // TODO: iframe.
-      domObject.appendChild(button);
+      // Wire everything together.
+      contain.appendChild(button);
+      body.appendChild(contain);
+      innerDoc.body = body;
     }
 
 
