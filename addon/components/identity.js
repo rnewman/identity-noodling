@@ -81,42 +81,41 @@ IdentityManager.prototype = {
     return null;
   },
 
-  xpcom_categories: [{category: "JavaScript global property", entry: "identity"}],
-
   /*
    * Takes as input an array of providers that the RP can handle.
    * Returns three values: an array of providers that the user already uses,
    * an array of providers that they trust but don't use, and the rest.
    */
   _partitionProviders: function _partitionProviders(suggested) {
-      let acceptable = [];
-      let create     = [];
-      let unknown    = [];
+    dump("Suggested: " + suggested + "\n");
+    let acceptable = [];
+    let create     = [];
+    let unknown    = [];
 
-      if (!suggested.length)
-        return [acceptable, create, unknown];
-
-      let existing  = [];                       // TODO: find me.
-      let permitted = [this._defaultProvider];  // TODO: find me.
-
-      if (suggested[0] == "*") {
-        acceptable = existing.slice();
-        create     = permitted.slice();         // TODO: remove existing.
-        return [acceptable, create, unknown];
-      }
-
-      // Partition the suggested providers.
-      suggested.forEach(function (p) {
-        if (existing.indexOf(p) != -1)
-          acceptable.push(p)
-        if (permitted.indexOf(p) != -1)
-          create.push(p);
-        else
-          unknown.push(p);
-      });
-
+    if (!suggested.length)
       return [acceptable, create, unknown];
-    },
+
+    let existing  = [];                       // TODO: find me.
+    let permitted = [this._defaultProvider];  // TODO: find me.
+
+    if (suggested[0] == "*") {
+      acceptable = existing.slice();
+      create     = permitted.slice();         // TODO: remove existing.
+      return [acceptable, create, unknown];
+    }
+
+    // Partition the suggested providers.
+    suggested.forEach(function (p) {
+      if (existing.indexOf(p) != -1)
+        acceptable.push(p)
+      if (permitted.indexOf(p) != -1)
+        create.push(p);
+      else
+        unknown.push(p);
+    });
+
+    return [acceptable, create, unknown];
+  },
 
   /*
    * Create a signin button, attached to an element in the document.
@@ -124,7 +123,7 @@ IdentityManager.prototype = {
    * Arguments:
    *   providers:  an array of identity provider URIs, or ["*"].
    *   attributes: an array of attributes being requested from the provider.
-   *   domID:      the ID of an element in the document. Used as the parent.
+   *   domObject:  an element in the document. Used as the parent.
    *   callback:   a function of (response), where response has these attributes:
    *     - sid:      the opaque string provided by the caller.
    *     - success:  boolean, true if the authentication operation succeeded.
@@ -144,29 +143,26 @@ IdentityManager.prototype = {
    * provider URI with the id and secret.
    */
   createSignInButton:
-    function createSignInButton(providers, attributes, domID, callback) {
-      // TODO: this is wrong.
-      if (!window.document)
-        throw "Cannot operate in a non-document context.";
+    function createSignInButton(providers, attributes, domObject, callback) {
+      dump("Providers: " + providers + "\n");
+      dump("Providers: " + JSON.stringify(providers) + "\n");
+      dump("DOM object is " + domObject + "\n");
+      if (!domObject)
+        return false;
 
       // Find out which providers are acceptable. Use these in the generated UI.
       let [acceptable, create, unknown] = this._partitionProviders(providers);
 
       // Build a button.
-      let parent = window.document.getElementById(domID);
-
-      if (!parent)
-        return false;
-
-      let button = window.document.createElement("input");
+      let button = domObject.ownerDocument.createElement("input");
       button.name = "Sign In";
       button.type = "button";
       button.onclick = function() {
-        alert(JSON.stringify([acceptable, create, unknown]));
+        button.name = JSON.stringify([acceptable, create, unknown]);
       }
 
       // TODO: iframe.
-      parent.appendChild(button);
+      domObject.appendChild(button);
     }
 
 
