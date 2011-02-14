@@ -28,7 +28,8 @@
       // N.B., no targetOrigin yet. Change this when we have a fixed hosting
       // location.
       function postmessage() {
-        var response = (1 > (Math.random() * 2)) ? fakeLoginData : fakeFailureData;
+        // Randomize whether we get success or error.
+        var response = (1 > (Math.random() * 3)) ? fakeFailureData : fakeLoginData;
         window.parent.postMessage(JSON.stringify(response), "*");
       }
     </script>
