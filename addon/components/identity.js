@@ -64,7 +64,8 @@ IdentityManager.prototype = {
   /*
    * When we sub in a login page, this is where we go.
    */
-  _loginIFrameSrc: "https://id.mozilla.com/login/",
+  _blankIFrameSrc: "http://twinql.com/login/blank.html",
+  //_blankIFrameSrc: "file:///Users/rnewman/moz/git/identity/snippets/blank.html",
 
   /*
    * XPCOM nonsense.
@@ -172,17 +173,63 @@ IdentityManager.prototype = {
       // Find out which providers are acceptable. Use these in the generated UI.
       let [acceptable, create, unknown] = this._partitionProviders(providers);
 
+      let blank = this._blankIFrameSrc;
+      function computeIFrameURI() {
+        return blank;
+      }
       let outerDoc = domObject.ownerDocument;
-      let src      = this._loginIFrameSrc;
+      let outerWin = outerDoc.defaultView;
+      dump("Outer window: " + outerWin + "\n");
+      dump("Outer document: " + outerDoc + "\n");
       function insertIFrame() {
-        let iframe   = outerDoc.createElement("iframe");
-        iframe.src   = src;
-
-        // For now, just add the frame to the page. We probably want a pretty
-        // overlay instead.
-        domObject.appendChild(iframe);
-
-        // TODO: Wire up listeners for the iframe's events, and call the callback.
+        
+        dump("Creating wrapper iframe.\n");
+        let wrapper     = outerDoc.createElement("iframe");
+        let src         = computeIFrameURI();
+        dump("src is " + src + "\n");
+        wrapper.src     = src;
+        
+        function waveHello() {
+          dump("win ...\n");
+          let win = wrapper.contentWindow;
+          dump("win is " + win + "\n");
+          win.postMessage("parent", "*");
+          dump("Message sent. \n");
+          win.addEventListener("message", invokeCallback, true);
+        }
+        
+        wrapper.addEventListener("load", waveHello, true);
+        domObject.appendChild(wrapper);
+        
+        /*
+        let wrapperDoc = wrapper.contentDocument;
+        let body       = wrapperDoc.createElement("body");
+        wrapperDoc.body = body;
+        */
+        /*
+        let img    = wrapperDoc.createElement("img");
+        img.src    = "http://twinql.com/jpg/edc_201012.jpg";
+        img.width  = 200;
+        img.height = 200;
+        wrapperDoc.body.appendChild(img);
+        */
+        
+        /*
+        let iframe      = wrapperDoc.createElement("iframe");
+        dump("Adding child iframe." + "\n");
+        wrapperDoc.body.appendChild(iframe);
+        iframe.src      = src;
+        */
+        
+        // Add a listener to our wrapper iframe. This will call the callback
+        // when it receives a PostMessage from the inner iframe.
+        function invokeCallback(response) {
+          dump("Origin: " + response.origin + "\n");
+          dump("Source: " + response.source + "\n");
+          dump("Received message: " + response.data + "\n");
+          //callback("Received message: " + response.data);
+        }
+        outerWin.addEventListener("message", invokeCallback, true);
       }
 
       // Build a button.
