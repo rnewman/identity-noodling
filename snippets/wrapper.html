@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wrapper page</title>
+</head>
+<body style="background-color: red">
+  <iframe id="login" src="http://twinql.com/login/wrappedLogin.html"/>
+    <!--
+  <script type="text/javascript">
+    var _parent = null;
+    window.onload = function() {
+      try {
+        _parent = window.parent;
+      } catch (ex) {
+        alert("Couldn't save parent: " + ex);
+      }
+    };
+
+    function doMessage(m) {
+      // Propagate if we're nested.
+      alert("Wrapper page got message: " + m.data + " from origin " + m.origin);
+      alert("Sender: " + m.source);
+    }
+    window.addEventListener("message", doMessage, true);
+  </script>
+  -->
+</body>
+</html>
+

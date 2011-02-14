@@ -1,0 +1,17 @@
+<html>
+  <head>
+    <title>Mozilla Identity login example</title>
+  </head>
+  <body>
+    <h1>Example</h1>
+    <div id="buttongoeshere">
+    </div>
+    <script language="javascript" type="text/javascript">
+      function myCallback(message) {
+        alert("Callback called: " + message);
+      }
+      window.identity.createSignInButton(["*"], [], document.getElementById("buttongoeshere"), myCallback);
+    </script>
+  </body>
+</html>
+

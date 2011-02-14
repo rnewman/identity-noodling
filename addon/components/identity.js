@@ -53,19 +53,10 @@ function IdentityManager() {
 IdentityManager.prototype = {
   _defaultProvider: "web4.dev.svc.mtv1.mozilla.com",
 
-  // We get a security error when this is loaded... but then everything works fine.
-  // Puzzling.
-  _defaultIFrameSrc: "chrome://identity/content/buttonframe.html",
-
-  // An alternative approach... that doesn't actually allow us to fiddle with the
-  // contents.
-  //_defaultIFrameSrc: "data:text/html,<html><head></head><body>Hello!</body></html>",
-
   /*
    * When we sub in a login page, this is where we go.
    */
-  _blankIFrameSrc: "http://twinql.com/login/blank.html",
-  //_blankIFrameSrc: "file:///Users/rnewman/moz/git/identity/snippets/blank.html",
+  _blankIFrameSrc: "http://twinql.com/login/wrapper.html",
 
   /*
    * XPCOM nonsense.
@@ -193,7 +184,7 @@ IdentityManager.prototype = {
           dump("win ...\n");
           let win = wrapper.contentWindow;
           dump("win is " + win + "\n");
-          win.postMessage("parent", "*");
+          // win.postMessage("parent", "*");       // This comes back to us!
           dump("Message sent. \n");
           win.addEventListener("message", invokeCallback, true);
         }
@@ -201,33 +192,13 @@ IdentityManager.prototype = {
         wrapper.addEventListener("load", waveHello, true);
         domObject.appendChild(wrapper);
         
-        /*
-        let wrapperDoc = wrapper.contentDocument;
-        let body       = wrapperDoc.createElement("body");
-        wrapperDoc.body = body;
-        */
-        /*
-        let img    = wrapperDoc.createElement("img");
-        img.src    = "http://twinql.com/jpg/edc_201012.jpg";
-        img.width  = 200;
-        img.height = 200;
-        wrapperDoc.body.appendChild(img);
-        */
-        
-        /*
-        let iframe      = wrapperDoc.createElement("iframe");
-        dump("Adding child iframe." + "\n");
-        wrapperDoc.body.appendChild(iframe);
-        iframe.src      = src;
-        */
-        
         // Add a listener to our wrapper iframe. This will call the callback
         // when it receives a PostMessage from the inner iframe.
         function invokeCallback(response) {
           dump("Origin: " + response.origin + "\n");
           dump("Source: " + response.source + "\n");
           dump("Received message: " + response.data + "\n");
-          //callback("Received message: " + response.data);
+          callback("Received message: " + response.data);
         }
         outerWin.addEventListener("message", invokeCallback, true);
       }
