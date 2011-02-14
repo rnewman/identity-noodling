@@ -12,10 +12,18 @@
     </div>
     <script language="javascript" type="text/javascript">
       function myCallback(message) {
-        alert("Callback called: " + message);
+        var idform = document.getElementById("idform");
+        alert(JSON.stringify(message));
+        if (message.successful)
+          idform.value = message.id;
+        else
+          idform.value = "Error.";
       }
       window.identity.createSignInButton(["*"], [], document.getElementById("buttongoeshere"), myCallback);
     </script>
+    <div id="out">
+      <input type="text" id="idform"/>
+    </div>
   </body>
 </html>
 

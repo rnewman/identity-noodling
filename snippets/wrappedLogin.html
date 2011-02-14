@@ -9,10 +9,27 @@
   </head>
   <body style="background-color: blue">
     <script type="text/javascript">
+      var fakeLoginData =
+        { 'sid': "abcdefghijkl",
+          'successful': true,
+          'id' : "testuser@domain.com",
+          'secret': "abcdef",
+          'metadata': { 'email': "testuser@domain.com" }
+        };
+
+      var fakeFailureData =
+        { 'sid': "abcdefghijkl",
+          'successful': false,
+          'error': { 'code': -1 , 	// error code
+                     'subcode': -20, // optional sub code
+                     'msg': "Incorrect username or password" }
+        };
+
       // N.B., no targetOrigin yet. Change this when we have a fixed hosting
       // location.
       function postmessage() {
-        window.parent.postMessage("goodbye world!", "*");
+        var response = (1 > (Math.random() * 2)) ? fakeLoginData : fakeFailureData;
+        window.parent.postMessage(JSON.stringify(response), "*");
       }
     </script>
     <div>

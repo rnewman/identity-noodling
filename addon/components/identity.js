@@ -173,13 +173,13 @@ IdentityManager.prototype = {
       dump("Outer window: " + outerWin + "\n");
       dump("Outer document: " + outerDoc + "\n");
       function insertIFrame() {
-        
+
         dump("Creating wrapper iframe.\n");
         let wrapper     = outerDoc.createElement("iframe");
         let src         = computeIFrameURI();
         dump("src is " + src + "\n");
         wrapper.src     = src;
-        
+
         function waveHello() {
           dump("win ...\n");
           let win = wrapper.contentWindow;
@@ -188,17 +188,17 @@ IdentityManager.prototype = {
           dump("Message sent. \n");
           win.addEventListener("message", invokeCallback, true);
         }
-        
+
         wrapper.addEventListener("load", waveHello, true);
         domObject.appendChild(wrapper);
-        
+
         // Add a listener to our wrapper iframe. This will call the callback
         // when it receives a PostMessage from the inner iframe.
         function invokeCallback(response) {
           dump("Origin: " + response.origin + "\n");
           dump("Source: " + response.source + "\n");
           dump("Received message: " + response.data + "\n");
-          callback("Received message: " + response.data);
+          callback(JSON.parse(response.data));
         }
         outerWin.addEventListener("message", invokeCallback, true);
       }
