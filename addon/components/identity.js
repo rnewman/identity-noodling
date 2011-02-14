@@ -180,27 +180,23 @@ IdentityManager.prototype = {
         dump("src is " + src + "\n");
         wrapper.src     = src;
 
-        function waveHello() {
-          dump("win ...\n");
-          let win = wrapper.contentWindow;
-          dump("win is " + win + "\n");
-          // win.postMessage("parent", "*");       // This comes back to us!
-          dump("Message sent. \n");
-          win.addEventListener("message", invokeCallback, true);
-        }
-
-        wrapper.addEventListener("load", waveHello, true);
-        domObject.appendChild(wrapper);
-
-        // Add a listener to our wrapper iframe. This will call the callback
-        // when it receives a PostMessage from the inner iframe.
         function invokeCallback(response) {
           dump("Origin: " + response.origin + "\n");
           dump("Source: " + response.source + "\n");
           dump("Received message: " + response.data + "\n");
           callback(JSON.parse(response.data));
         }
-        outerWin.addEventListener("message", invokeCallback, true);
+
+        function setupCallbackListener() {
+          let win = wrapper.contentWindow;
+          // win.postMessage("parent", "*");       // This comes back to us!
+          win.addEventListener("message", invokeCallback, true);
+        }
+
+        // Add a listener to our wrapper iframe. This will call the callback
+        // when it receives a PostMessage from the inner iframe.
+        wrapper.addEventListener("load", setupCallbackListener, true);
+        domObject.appendChild(wrapper);
       }
 
       // Build a button.
@@ -214,7 +210,7 @@ IdentityManager.prototype = {
           },
           true);
 
-      // Wire everything together.
+      // Insert the button into the page.
       domObject.appendChild(button);
     }
 
