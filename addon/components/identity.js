@@ -51,12 +51,17 @@ const SUPPORTED_INTERFACES = [Ci.nsIIdentityManager,
 function IdentityManager() {
 }
 IdentityManager.prototype = {
+  
+  /* 
+  // Live testing.
+  _defaultProtocol: "https",
   _defaultProvider: "web4.dev.svc.mtv1.mozilla.com",
-
-  /*
-   * When we sub in a login page, this is where we go.
+  _defaultPath: "/login",
    */
-  _blankIFrameSrc: "http://twinql.com/login/wrapper.html",
+
+  _defaultProtocol: "http",
+  _defaultProvider: "twinql.com",
+  _defaultPath: "/login/wrappedLogin.html",
 
   /*
    * XPCOM nonsense.
@@ -129,6 +134,9 @@ IdentityManager.prototype = {
 
   /*
    * Create a signin button, attached to an element in the document.
+   * 
+   * The button, and the iframe it creates, are wrapped in an iframe. This
+   * prevents the calling page from messing about with it.
    *
    * Arguments:
    *   providers:  an array of identity provider URIs, or ["*"].
@@ -164,54 +172,69 @@ IdentityManager.prototype = {
       // Find out which providers are acceptable. Use these in the generated UI.
       let [acceptable, create, unknown] = this._partitionProviders(providers);
 
-      let blank = this._blankIFrameSrc;
+      // Compute the URI to use for the innermost iframe.
+      let protocol = this._defaultProtocol;
+      let provider = this._defaultProvider;
+      let path     = this._defaultPath;
       function computeIFrameURI() {
-        return blank;
+        let out = protocol + "://" + provider + path;
+        dump("URL: " + out + "\n");
+        return out;
       }
+
       let outerDoc = domObject.ownerDocument;
       let outerWin = outerDoc.defaultView;
       dump("Outer window: " + outerWin + "\n");
       dump("Outer document: " + outerDoc + "\n");
-      function insertIFrame() {
 
-        dump("Creating wrapper iframe.\n");
-        let wrapper     = outerDoc.createElement("iframe");
-        let src         = computeIFrameURI();
-        dump("src is " + src + "\n");
-        wrapper.src     = src;
+      dump("Creating wrapper iframe.\n");
+      let wrapper = outerDoc.createElement("iframe");
+      wrapper.id  = "-mozilla-id-iframe";
+      
+      // Point this somewhere to style the iframe.
+      // It also handily provides same-origin protection to the contents of the
+      // iframe.
+      wrapper.src = "http://twinql.com/login/blank.html";
 
-        function invokeCallback(response) {
-          dump("Origin: " + response.origin + "\n");
-          dump("Source: " + response.source + "\n");
-          dump("Received message: " + response.data + "\n");
-          callback(JSON.parse(response.data));
-        }
-
-        function setupCallbackListener() {
-          let win = wrapper.contentWindow;
-          // win.postMessage("parent", "*");       // This comes back to us!
-          win.addEventListener("message", invokeCallback, true);
-        }
-
-        // Add a listener to our wrapper iframe. This will call the callback
-        // when it receives a PostMessage from the inner iframe.
-        wrapper.addEventListener("load", setupCallbackListener, true);
-        domObject.appendChild(wrapper);
+      function invokeCallback(response) {
+        dump("Origin: " + response.origin + "\n");
+        dump("Source: " + response.source + "\n");
+        dump("Received message: " + response.data + "\n");
+        callback(JSON.parse(response.data));
       }
 
-      // Build a button.
-      let button   = outerDoc.createElement("input");
-      button.value = "Sign In";
-      button.type  = "button";
-      button.addEventListener("click",
-          function() {
-            insertIFrame();
-            this.value = "Indeed.";
-          },
-          true);
+      function insertChildIFrame() {
+        let child = wrapper.contentDocument.createElement("iframe");
+        child.id = "login";
+        child.src = computeIFrameURI();
+        wrapper.contentDocument.body.appendChild(child);
+      }
 
-      // Insert the button into the page.
-      domObject.appendChild(button);
+      function setupWrapper() {
+        let win = wrapper.contentWindow;
+        let doc = wrapper.contentDocument;
+        
+        // win.postMessage("parent", "*");       // This comes back to us!
+        win.addEventListener("message", invokeCallback, true);
+          
+        // Build a button.
+        let button   = doc.createElement("input");
+        button.id    = "signinButton";
+        button.value = "Sign In";
+        button.type  = "button";
+        button.addEventListener("click",
+            function() {
+              insertChildIFrame();
+              this.value = "Indeed.";
+            },
+            true);
+        doc.body.appendChild(button);
+      }
+
+      // Add a listener to our wrapper iframe. This will call the callback
+      // when it receives a PostMessage from the inner iframe.
+      wrapper.addEventListener("load", setupWrapper, true);
+      domObject.appendChild(wrapper);
     }
 
 
