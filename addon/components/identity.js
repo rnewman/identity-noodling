@@ -57,11 +57,13 @@ IdentityManager.prototype = {
   _defaultProtocol: "https",
   _defaultProvider: "web4.dev.svc.mtv1.mozilla.com",
   _defaultPath: "/login",
+  _blankPath: "/login/blank.html",
    */
 
   _defaultProtocol: "http",
   _defaultProvider: "twinql.com",
   _defaultPath: "/login/wrappedLogin.html",
+  _blankPath: "/login/blank.html",
 
   /*
    * XPCOM nonsense.
@@ -175,11 +177,11 @@ IdentityManager.prototype = {
       // Compute the URI to use for the innermost iframe.
       let protocol = this._defaultProtocol;
       let provider = this._defaultProvider;
-      let path     = this._defaultPath;
-      function computeIFrameURI() {
-        let out = protocol + "://" + provider + path;
-        dump("URL: " + out + "\n");
-        return out;
+      let innerPath = this._defaultPath;
+      let blankPath = this._blankPath;
+
+      function computeIFrameURI(path) {
+        return protocol + "://" + provider + path;
       }
 
       let outerDoc = domObject.ownerDocument;
@@ -189,12 +191,12 @@ IdentityManager.prototype = {
 
       dump("Creating wrapper iframe.\n");
       let wrapper = outerDoc.createElement("iframe");
-      wrapper.id  = "-mozilla-id-iframe";
+      wrapper.id  = "-mozilla-id-iframe";               // Not strictly necessary.
       
       // Point this somewhere to style the iframe.
       // It also handily provides same-origin protection to the contents of the
       // iframe.
-      wrapper.src = "http://twinql.com/login/blank.html";
+      wrapper.src = computeIFrameURI(blankPath);
 
       function invokeCallback(response) {
         dump("Origin: " + response.origin + "\n");
@@ -206,7 +208,7 @@ IdentityManager.prototype = {
       function insertChildIFrame() {
         let child = wrapper.contentDocument.createElement("iframe");
         child.id = "login";
-        child.src = computeIFrameURI();
+        child.src = computeIFrameURI(innerPath);
         wrapper.contentDocument.body.appendChild(child);
       }
 
