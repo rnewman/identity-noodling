@@ -19,10 +19,23 @@
           idform.value = "Error.";
       }
       window.identity.createSignInButton(["*"], [], document.getElementById("buttongoeshere"), myCallback);
+      
+      
     </script>
     <div id="out">
       <input type="text" id="idform"/>
     </div>
+    <script language="javascript" type="text/javascript">
+      function introspect() { 
+        var iframe = document.getElementById("-mozilla-id-iframe");
+        alert(iframe);
+        
+        // This second alert will fail if this page isn't hosted on the same
+        // domain as the login iframe itself.
+        alert(iframe.contentDocument.getElementById("signinButton"));
+      }
+    </script>
+    <input value="Peek inside" type="button" onClick="introspect()"/>
   </body>
 </html>
 
