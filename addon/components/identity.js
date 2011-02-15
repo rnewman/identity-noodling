@@ -60,8 +60,14 @@ IdentityManager.prototype = {
   _blankPath: "/login/blank.html",
    */
 
+  _prefsService: Components.classes["@mozilla.org/preferences-service;1"]
+                   .getService(Components.interfaces.nsIPrefService),
+
+  get _defaultProvider() {
+    let prefs = this._prefsService.getBranch("services.identity.providers.");
+    return prefs.getCharPref("default");
+  },
   _defaultProtocol: "http",
-  _defaultProvider: "twinql.com",
   _defaultPath: "/login/wrappedLogin.html",
   _blankPath: "/login/blank.html",
 

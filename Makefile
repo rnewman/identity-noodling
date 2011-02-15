@@ -45,7 +45,7 @@ export stage_dir=$(objdir)/stage
 xpi_dir=$(objdir)/xpi
 
 xpi_name := identity.xpi
-xpi_files := chrome/identity.jar components modules \
+xpi_files := chrome/identity.jar defaults components modules \
              platform install.rdf chrome.manifest
 
 SUBST = perl -pe 's/@([^@]+)@/defined $$ENV{$$1} ? $$ENV{$$1} : $$&/ge'
@@ -77,6 +77,7 @@ build: setup idl
 	$(MKDIR) $(stage_dir)/chrome/content
 	$(MKDIR) $(stage_dir)/chrome/skin
 	$(MKDIR) $(stage_dir)/components
+	$(MKDIR) $(stage_dir)/defaults/preferences
 	$(SLINK) $(TOPSRCDIR)/addon/chrome.manifest $(stage_dir)/chrome.manifest
 	$(SLINK) $(TOPSRCDIR)/addon/install.rdf $(stage_dir)/install.rdf
 	$(SLINK) $(TOPSRCDIR)/addon/bootstrap.js $(stage_dir)/bootstrap.js
@@ -84,6 +85,7 @@ build: setup idl
 	$(SLINK) $(TOPSRCDIR)/addon/identity-32x32.png $(stage_dir)/chrome/skin/identity-32x32.png
 	$(SLINK) $(TOPSRCDIR)/addon/components/identity.js $(stage_dir)/components/identity.js
 	$(SLINK) $(TOPSRCDIR)/addon/components/IdentityManager.xpt $(stage_dir)/components/IdentityManager.xpt
+	$(SLINK) $(TOPSRCDIR)/addon/defaults/preferences/identityPrefs.js $(stage_dir)/defaults/preferences/identityPrefs.js
 
 xpi: build
 	cd $(stage_dir)/chrome;rm -f identity.jar;zip -0r identity.jar *
