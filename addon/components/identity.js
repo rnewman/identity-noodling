@@ -51,14 +51,6 @@ const SUPPORTED_INTERFACES = [Ci.nsIIdentityManager,
 function IdentityManager() {
 }
 IdentityManager.prototype = {
-  
-  /* 
-  // Live testing.
-  _defaultProtocol: "https",
-  _defaultProvider: "web4.dev.svc.mtv1.mozilla.com",
-  _defaultPath: "/login",
-  _blankPath: "/login/blank.html",
-   */
 
   _prefsService: Components.classes["@mozilla.org/preferences-service;1"]
                    .getService(Components.interfaces.nsIPrefService),
@@ -68,8 +60,8 @@ IdentityManager.prototype = {
     return prefs.getCharPref("default");
   },
   _defaultProtocol: "http",
-  _defaultPath: "/login/wrappedLogin.html",
-  _blankPath: "/login/blank.html",
+  _defaultPath: "/login",
+  _blankPath: "/blank.html",
 
   /*
    * XPCOM nonsense.
@@ -198,6 +190,8 @@ IdentityManager.prototype = {
       dump("Creating wrapper iframe.\n");
       let wrapper = outerDoc.createElement("iframe");
       wrapper.id  = "-mozilla-id-iframe";               // Not strictly necessary.
+      wrapper.width  = "80";
+      wrapper.height = "40";
       
       // Point this somewhere to style the iframe.
       // It also handily provides same-origin protection to the contents of the
@@ -212,10 +206,18 @@ IdentityManager.prototype = {
       }
 
       function insertChildIFrame() {
-        let child = wrapper.contentDocument.createElement("iframe");
-        child.id = "login";
+        let doc   = wrapper.contentDocument;
+        let div   = doc.createElement("div");
+        let child = doc.createElement("iframe");
+        child.id  = "login";
         child.src = computeIFrameURI(innerPath);
-        wrapper.contentDocument.body.appendChild(child);
+        
+        child.width    = "400";
+        child.height   = "250";
+        wrapper.width  = "440";
+        wrapper.height = "300";
+        div.appendChild(child);
+        doc.body.appendChild(div);
       }
 
       function setupWrapper() {

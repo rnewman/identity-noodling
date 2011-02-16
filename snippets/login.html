@@ -11,19 +11,23 @@
     <div id="buttongoeshere"></div>
     <script language="javascript" type="text/javascript">
       function myCallback(message) {
-        var idform = document.getElementById("idform");
-        alert(JSON.stringify(message));
-        if (message.successful)
-          idform.value = message.id;
-        else
-          idform.value = "Error.";
+        var idform    = document.getElementById("idform");
+        var emailform = document.getElementById("emailform");
+        if (message.successful) {
+          idform.value    = message.id;
+          emailform.value = message.metadata.email;
+        } else {
+          idform.value    = "Error.";
+          emailform.value = "";
+        }
       }
       window.identity.createSignInButton(["*"], [], document.getElementById("buttongoeshere"), myCallback);
       
       
     </script>
     <div id="out">
-      <input type="text" id="idform"/>
+      <p><b>ID:</b> <input type="text" id="idform"/></p>
+      <p><b>Email:</b> <input type="text" id="emailform"/></p>
     </div>
     <script language="javascript" type="text/javascript">
       function introspect() { 
