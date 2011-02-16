@@ -21,7 +21,8 @@
           emailform.value = "";
         }
       }
-      window.identity.createSignInButton(["*"], [], document.getElementById("buttongoeshere"), myCallback);
+      var sid = "some-unique-id";
+      window.identity.createSignInButton(["*"], [], document.getElementById("buttongoeshere"), myCallback, sid);
       
       
     </script>

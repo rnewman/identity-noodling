@@ -42,7 +42,9 @@ interface nsIIdentityManager : nsISupports {
   void createSignInButton(in nsIVariant providers,
                           in nsIVariant attributes,
                           in nsIVariant domID,
-                          in nsIVariant callback);
+                          in nsIVariant callback,
+                          [optional]
+                          in AString    sid);
 
   /* Bogus method for testing. */
   AString foo();

@@ -134,7 +134,7 @@ IdentityManager.prototype = {
 
   /*
    * Create a signin button, attached to an element in the document.
-   * 
+   *
    * The button, and the iframe it creates, are wrapped in an iframe. This
    * prevents the calling page from messing about with it.
    *
@@ -161,7 +161,7 @@ IdentityManager.prototype = {
    * provider URI with the id and secret.
    */
   createSignInButton:
-    function createSignInButton(providers, attributes, domObject, callback) {
+    function createSignInButton(providers, attributes, domObject, callback, sid) {
       dump("Providers: " + providers + "\n");
       dump("Providers: " + JSON.stringify(providers) + "\n");
       dump("DOM object is " + domObject + "\n");
@@ -178,21 +178,35 @@ IdentityManager.prototype = {
       let innerPath = this._defaultPath;
       let blankPath = this._blankPath;
 
-      function computeIFrameURI(path) {
-        return protocol + "://" + provider + path;
+      function computeIFrameURI(path, queryParams) {
+        let base = protocol + "://" + provider + path;
+        if (!queryParams)
+          return base;
+
+        let acc = [];
+        for (let p in queryParams)
+          acc.push(encodeURIComponent(p) + "=" + encodeURIComponent(queryParams[p]));
+        return base + "?" + acc.join("&");
       }
 
       let outerDoc = domObject.ownerDocument;
       let outerWin = outerDoc.defaultView;
+      let rpURI    = outerDoc.URL;
       dump("Outer window: " + outerWin + "\n");
       dump("Outer document: " + outerDoc + "\n");
+      dump("RP URI: " + rpURI + "\n");
 
+      let loginArgs = {rp: rpURI};
+      if (sid)
+        loginArgs[sid] = sid;
+
+      dump("Login args: " + JSON.stringify(loginArgs) + "\n");
       dump("Creating wrapper iframe.\n");
       let wrapper = outerDoc.createElement("iframe");
       wrapper.id  = "-mozilla-id-iframe";               // Not strictly necessary.
       wrapper.width  = "80";
       wrapper.height = "40";
-      
+
       // Point this somewhere to style the iframe.
       // It also handily provides same-origin protection to the contents of the
       // iframe.
@@ -210,8 +224,9 @@ IdentityManager.prototype = {
         let div   = doc.createElement("div");
         let child = doc.createElement("iframe");
         child.id  = "login";
-        child.src = computeIFrameURI(innerPath);
-        
+        child.src = computeIFrameURI(innerPath, loginArgs);
+
+        dump("Child iframe src: " + child.src);
         child.width    = "400";
         child.height   = "250";
         wrapper.width  = "440";
@@ -223,10 +238,10 @@ IdentityManager.prototype = {
       function setupWrapper() {
         let win = wrapper.contentWindow;
         let doc = wrapper.contentDocument;
-        
+
         // win.postMessage("parent", "*");       // This comes back to us!
         win.addEventListener("message", invokeCallback, true);
-          
+
         // Build a button.
         let button   = doc.createElement("input");
         button.id    = "signinButton";
