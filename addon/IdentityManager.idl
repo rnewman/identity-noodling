@@ -45,7 +45,4 @@ interface nsIIdentityManager : nsISupports {
                           in nsIVariant callback,
                           [optional]
                           in AString    sid);
-
-  /* Bogus method for testing. */
-  AString foo();
 };

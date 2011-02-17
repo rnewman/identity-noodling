@@ -45,13 +45,14 @@ const CLASS_ID    = Components.ID("{ec8030f7-c20a-464f-9b0e-13a3a9e97384}");
 const CONTRACT_ID = "@mozilla.org/services/identity;1";
 
 const SUPPORTED_INTERFACES = [Ci.nsIIdentityManager,
-                              //Ci.nsISecurityCheckedComponent,    // Not right now.
                               Ci.nsIClassInfo];
 
 function IdentityManager() {
 }
 IdentityManager.prototype = {
-
+  /*
+   * Private fields.
+   */
   _prefsService: Components.classes["@mozilla.org/preferences-service;1"]
                    .getService(Components.interfaces.nsIPrefService),
 
@@ -62,39 +63,6 @@ IdentityManager.prototype = {
   _defaultProtocol: "http",
   _defaultPath: "/login",
   _blankPath: "/blank.html",
-
-  /*
-   * XPCOM nonsense.
-   */
-  classDescription: CLASS_NAME,
-  classID:          CLASS_ID,
-  classIDNoAlloc:   CLASS_ID,
-  contractID:       CONTRACT_ID,
-  QueryInterface:   XPCOMUtils.generateQI(SUPPORTED_INTERFACES),
-
-  /*
-   * Bogus method for testing.
-   */
-  foo: function foo() {
-    return "Hello!";
-  },
-
-  /*
-   * nsIClassInfo methods.
-   */
-  getInterfaces: function getInterfaces(aCount) {
-    let array = SUPPORTED_INTERFACES;
-    aCount.value = array.length;
-    return array;
-  },
-  implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
-  flags: Ci.nsIClassInfo.SINGLETON |
-         Ci.nsIClassInfo.DOM_OBJECT |
-         Ci.nsIClassInfo.THREADSAFE,
-
-  getHelperForLanguage: function getHelperForLanguage(lang) {
-    return null;
-  },
 
   /*
    * Takes as input an array of providers that the RP can handle.
@@ -131,6 +99,11 @@ IdentityManager.prototype = {
 
     return [acceptable, create, unknown];
   },
+
+
+  /*
+   * Public methods, listed in IdentityManager.idl.
+   */
 
   /*
    * Create a signin button, attached to an element in the document.
@@ -189,12 +162,21 @@ IdentityManager.prototype = {
         return base + "?" + acc.join("&");
       }
 
+      function makeIFrame(doc, width, height, path, queryParams) {
+        let i       = doc.createElement("iframe");
+        i.scrolling = "no";
+        i.width     = width;
+        i.height    = height;
+        i.src       = computeIFrameURI(path, queryParams);
+        return i;
+      }
+
       let outerDoc = domObject.ownerDocument;
       let outerWin = outerDoc.defaultView;
       let rpURI    = outerDoc.URL;
-      dump("Outer window: " + outerWin + "\n");
+      dump("Outer window: "   + outerWin + "\n");
       dump("Outer document: " + outerDoc + "\n");
-      dump("RP URI: " + rpURI + "\n");
+      dump("RP URI: "         + rpURI    + "\n");
 
       let loginArgs = {rp: rpURI};
       if (sid)
@@ -202,15 +184,12 @@ IdentityManager.prototype = {
 
       dump("Login args: " + JSON.stringify(loginArgs) + "\n");
       dump("Creating wrapper iframe.\n");
-      let wrapper = outerDoc.createElement("iframe");
-      wrapper.id  = "-mozilla-id-iframe";               // Not strictly necessary.
-      wrapper.width  = "80";
-      wrapper.height = "40";
 
       // Point this somewhere to style the iframe.
       // It also handily provides same-origin protection to the contents of the
       // iframe.
-      wrapper.src = computeIFrameURI(blankPath);
+      let wrapper = makeIFrame(outerDoc, 80, 40, blankPath);
+      wrapper.id  = "-mozilla-id-iframe";             // Not strictly necessary.
 
       function invokeCallback(response) {
         dump("Origin: " + response.origin + "\n");
@@ -222,13 +201,10 @@ IdentityManager.prototype = {
       function insertChildIFrame() {
         let doc   = wrapper.contentDocument;
         let div   = doc.createElement("div");
-        let child = doc.createElement("iframe");
+        let child = makeIFrame(doc, 400, 250, innerPath, loginArgs);
         child.id  = "login";
-        child.src = computeIFrameURI(innerPath, loginArgs);
 
         dump("Child iframe src: " + child.src);
-        child.width    = "400";
-        child.height   = "250";
         wrapper.width  = "440";
         wrapper.height = "300";
         div.appendChild(child);
@@ -237,12 +213,10 @@ IdentityManager.prototype = {
 
       function setupWrapper() {
         let win = wrapper.contentWindow;
-        let doc = wrapper.contentDocument;
-
-        // win.postMessage("parent", "*");       // This comes back to us!
         win.addEventListener("message", invokeCallback, true);
 
-        // Build a button.
+        // Build and attach a button.
+        let doc      = wrapper.contentDocument;
         let button   = doc.createElement("input");
         button.id    = "signinButton";
         button.value = "Sign In";
@@ -250,7 +224,7 @@ IdentityManager.prototype = {
         button.addEventListener("click",
             function() {
               insertChildIFrame();
-              this.value = "Indeed.";
+              this.value = "Indeed.";   // TODO: remove or disable button.
             },
             true);
         doc.body.appendChild(button);
@@ -260,36 +234,33 @@ IdentityManager.prototype = {
       // when it receives a PostMessage from the inner iframe.
       wrapper.addEventListener("load", setupWrapper, true);
       domObject.appendChild(wrapper);
-    }
-
-
-  /*
-   * nsISecurityCheckedComponent methods.
-   * These are commented out for now, because being a DOM_OBJECT makes them
-   * irrelevant, but at some point we might want to switch and use these for
-   * fine-grained access control.
-   */
+    },
 
   /*
-  canCreateWrapper: function canCreateWrapper(iid) {
-    return (iid.equals(Ci.nsIIdentityManager) && "allAccess") || "noAccess";
-  },
-
-  canCallMethod: function canCallMethod(iid, methodName) {
-    return (iid.equals(Ci.nsIIdentityManager) &&
-            (methodName == "createSignInButton") &&
-            "allAccess") || "noAccess";
-  },
-
-  canGetProperty: function canGetProperty(iid, propertyName) {
-    return "noAccess";
-  },
-
-  canSetProperty: function canSetProperty(iid, propertyName) {
-    return "noAccess";
-  },
+   * XPCOM nonsense.
    */
+  classDescription: CLASS_NAME,
+  classID:          CLASS_ID,
+  classIDNoAlloc:   CLASS_ID,
+  contractID:       CONTRACT_ID,
+  QueryInterface:   XPCOMUtils.generateQI(SUPPORTED_INTERFACES),
 
+  /*
+   * nsIClassInfo methods.
+   */
+  getInterfaces: function getInterfaces(aCount) {
+    let array = SUPPORTED_INTERFACES;
+    aCount.value = array.length;
+    return array;
+  },
+  implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+  flags: Ci.nsIClassInfo.SINGLETON |
+         Ci.nsIClassInfo.DOM_OBJECT |
+         Ci.nsIClassInfo.THREADSAFE,
+
+  getHelperForLanguage: function getHelperForLanguage(lang) {
+    return null;
+  }
 };
 
 var IdentityManagerFactory = {
